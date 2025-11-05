@@ -14,40 +14,45 @@ pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;margin-top:1em
 </head>
 <body>
 <div class="card">
-<h2>Llamar al robot</h2>
-<p id="desc">Cargando…</p>
-<button class="primary" id="confirm">Request robot</button>
-<pre id="status"></pre>
+  <h2>Llamar al robot</h2>
+  <p id="desc">Cargando…</p>
+  <button class="primary" id="confirm">Request robot</button>
+  <pre id="status"></pre>
 </div>
 
 <script>
-(async()=>{
+(()=> {
   const p=new URLSearchParams(location.search);
-  const table=p.get('table'), token=p.get('token')||'demo-token';
-  const desc=document.getElementById('desc'), status=document.getElementById('status');
-  if(!table){desc.textContent='Falta ?table=...';return;}
+  const table=p.get('table');
+  const token=p.get('token')||'demo-token';
+  const desc=document.getElementById('desc');
+  const status=document.getElementById('status');
+
+  if(!table){ desc.textContent='Falta ?table=...'; return; }
   desc.textContent=`¿Enviar robot a ${table}?`;
 
   async function getPos(){
     return new Promise(resolve=>{
-      if(!navigator.geolocation){resolve(null);return;}
+      if(!navigator.geolocation){ resolve({}); return; }
       navigator.geolocation.getCurrentPosition(
-        pos=>resolve({lat:pos.coords.latitude,lon:pos.coords.longitude}),
-        ()=>resolve(null),
-        {enableHighAccuracy:true,timeout:8000}
+        pos=>resolve({client_lat:pos.coords.latitude, client_lon:pos.coords.longitude}),
+        ()=>resolve({}), {enableHighAccuracy:true, timeout:8000}
       );
     });
   }
 
   document.getElementById('confirm').onclick=async()=>{
     status.textContent='Enviando...';
-    const loc=await getPos();
-    const payload={token,table,...(loc||{})};
+    const loc = await getPos(); // opcional (para validar “en el local” más adelante)
+    const payload = { token, table, ...loc };
+
     try{
-      const r=await fetch('/go',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const txt=await r.text();
-      status.textContent=r.ok?`✔ OK:\n${txt}`:`✖ Error:\n${txt}`;
-    }catch(e){status.textContent=`✖ ${e}`;}
+      const r = await fetch('/go', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      const txt = await r.text();
+      status.textContent = r.ok ? `✔ OK:\n${txt}` : `✖ Error:\n${txt}`;
+    }catch(e){
+      status.textContent = `✖ ${e}`;
+    }
   };
 })();
 </script>
