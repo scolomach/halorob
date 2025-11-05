@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Llamar al robot</title>
+<style>
+body{font-family:sans-serif;margin:2em;background:#f6f7f9}
+.card{max-width:500px;margin:auto;background:#fff;padding:2em;border-radius:16px;box-shadow:0 8px 20px rgba(0,0,0,0.1)}
+button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
+.primary{background:#2563eb;color:#fff}
+pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;margin-top:1em}
+</style>
+</head>
+<body>
+<div class="card">
+<h2>Llamar al robot</h2>
+<p id="desc">Cargando…</p>
+<button class="primary" id="confirm">Request robot</button>
+<pre id="status"></pre>
+</div>
+
+<script>
+(async()=>{
+  const p=new URLSearchParams(location.search);
+  const table=p.get('table'), token=p.get('token')||'demo-token';
+  const desc=document.getElementById('desc'), status=document.getElementById('status');
+  if(!table){desc.textContent='Falta ?table=...';return;}
+  desc.textContent=`¿Enviar robot a ${table}?`;
+
+  async function getPos(){
+    return new Promise(resolve=>{
+      if(!navigator.geolocation){resolve(null);return;}
+      navigator.geolocation.getCurrentPosition(
+        pos=>resolve({lat:pos.coords.latitude,lon:pos.coords.longitude}),
+        ()=>resolve(null),
+        {enableHighAccuracy:true,timeout:8000}
+      );
+    });
+  }
+
+  document.getElementById('confirm').onclick=async()=>{
+    status.textContent='Enviando...';
+    const loc=await getPos();
+    const payload={token,table,...(loc||{})};
+    try{
+      const r=await fetch('/go',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const txt=await r.text();
+      status.textContent=r.ok?`✔ OK:\n${txt}`:`✖ Error:\n${txt}`;
+    }catch(e){status.textContent=`✖ ${e}`;}
+  };
+})();
+</script>
+</body>
+</html>
