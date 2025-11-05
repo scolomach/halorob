@@ -1,95 +1,165 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Call the robot</title>
-<style>
-  :root { --bg:#f6f7f9; --card:#fff; --muted:#6b7280; --ring:#2563eb; }
-  * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:var(--bg); padding:24px; }
-  .card { max-width: 560px; margin: 0 auto; background: var(--card); border-radius: 16px; padding: 24px;
-          box-shadow: 0 10px 24px rgba(0,0,0,.06); }
-  h1 { font-size: 1.5rem; margin: 0 0 8px; }
-  .muted { color: var(--muted); margin:0 0 12px; }
-  .row { display:flex; gap:12px; margin-top: 12px; }
-  button { appearance: none; border: 0; border-radius: 12px; padding: 12px 16px; font-weight: 700; cursor: pointer; }
-  .primary { background: var(--ring); color:#fff; }
-  .ghost { background:#e5e7eb; color:#111827; }
-  .badge { display:inline-block; padding:4px 10px; border-radius:999px; background:#eef2ff; color:#1e40af; font-weight:700; }
-  pre { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#f3f4f6;
-        padding:12px; border-radius:12px; margin-top:12px; }
-  .kv { margin: 4px 0; }
-  .kv code { background:#f3f4f6; padding:2px 6px; border-radius:6px; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Call the robot</title>
+  <!-- Tailwind via CDN (simple for static pages) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Tailwind config: light/dark + font + container
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          boxShadow: { brand: '0 10px 30px rgba(2, 132, 199, .15)' }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="light dark">
 </head>
-<body>
-  <div class="card">
-    <h1>Call the robot</h1>
-    <p class="muted" id="desc">Loading…</p>
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+  <div class="min-h-full flex items-center justify-center p-6">
+    <div class="w-full max-w-xl">
+      <!-- Card -->
+      <div class="relative bg-white/90 dark:bg-slate-800/80 backdrop-blur rounded-2xl shadow-xl ring-1 ring-slate-200/60 dark:ring-slate-700/60 overflow-hidden">
+        <!-- Accent top bar -->
+        <div class="h-1.5 bg-cyan-500"></div>
 
-    <div id="details"></div>
+        <div class="p-6 sm:p-8 space-y-5">
+          <!-- Header -->
+          <div class="flex items-center gap-3">
+            <!-- Optional logo: replace src if you have one -->
+            <img id="logo" alt="Logo" class="w-10 h-10 rounded-lg hidden" />
+            <div>
+              <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Call the robot</h1>
+              <p id="subtitle" class="text-sm text-slate-600 dark:text-slate-300">Loading…</p>
+            </div>
+          </div>
 
-    <div class="row">
-      <button class="primary" id="confirm">Request robot</button>
-      <button class="ghost" id="cancel">Cancel</button>
+          <!-- Details -->
+          <div id="details" class="text-sm sm:text-base space-y-1 hidden">
+            <div>Table: <span id="tableBadge" class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-200">—</span></div>
+            <div id="nameRow" class="hidden">Customer: <code id="custName" class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700"></code></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 pt-1">
+            <button id="confirm"
+              class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 text-white font-semibold shadow-brand transition disabled:opacity-60 disabled:cursor-not-allowed">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                   aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round"
+                   d="M12 6v6l4 2"/></svg>
+              <span>Request robot</span>
+            </button>
+            <button id="cancel"
+              class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-900 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600 font-semibold transition">
+              Cancel
+            </button>
+          </div>
+
+          <!-- Status -->
+          <div id="statusWrap" class="hidden">
+            <div id="status"
+                 class="mt-2 text-sm whitespace-pre-wrap rounded-xl p-3 bg-slate-50 dark:bg-slate-800 ring-1 ring-slate-200/50 dark:ring-slate-700/50"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer note -->
+      <div class="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+        Tip: add <code>&name=YourName</code> in the URL to show the customer name on this screen.
+      </div>
     </div>
-
-    <pre id="status"></pre>
   </div>
 
-<script>
-(()=> {
-  const p = new URLSearchParams(location.search);
-  const table = p.get('table');
-  const name  = p.get('name');     // NEW: pass a human name
-  const token = p.get('token') || 'demo-token';
+  <script>
+  (() => {
+    const qs = new URLSearchParams(location.search);
+    const table = qs.get('table');
+    const name  = qs.get('name') || '';
+    const token = qs.get('token') || 'demo-token';
+    const logo  = qs.get('logo'); // optional ?logo=https://...
 
-  const desc   = document.getElementById('desc');
-  const status = document.getElementById('status');
-  const details= document.getElementById('details');
-  const confirm= document.getElementById('confirm');
-  const cancel = document.getElementById('cancel');
+    const subtitle = document.getElementById('subtitle');
+    const details  = document.getElementById('details');
+    const tableBadge = document.getElementById('tableBadge');
+    const nameRow = document.getElementById('nameRow');
+    const custName = document.getElementById('custName');
+    const statusWrap = document.getElementById('statusWrap');
+    const status  = document.getElementById('status');
+    const btnConfirm = document.getElementById('confirm');
+    const btnCancel  = document.getElementById('cancel');
+    const logoImg = document.getElementById('logo');
 
-  // Basic validation
-  if(!table || !token){
-    desc.textContent = 'Missing parameters. URL must include ?table=...&token=...';
-    confirm.disabled = true;
-    return;
-  }
-
-  // UI preview
-  desc.innerHTML = `Send the robot to <span class="badge">${table}</span>?`;
-  details.innerHTML = name ? `<div class="kv">Customer: <code>${name}</code></div>` : '';
-
-  cancel.onclick = () => {
-    status.textContent = 'Canceled.';
-    setTimeout(()=>history.back(), 600);
-  };
-
-  confirm.onclick = async () => {
-    status.textContent = 'Sending request…';
-    confirm.disabled = true;
-
-    try {
-      const payload = { token, table };
-      if (name) payload.name = name; // include the name if present
-
-      const r = await fetch('/go', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const txt = await r.text();
-      if (!r.ok) throw new Error(`HTTP ${r.status}: ${txt}`);
-      status.textContent = `✔ OK:\n${txt}`;
-    } catch (e) {
-      status.textContent = `✖ Error: ${e.message}`;
-      confirm.disabled = false;
+    // Optional logo
+    if (logo) {
+      logoImg.src = logo;
+      logoImg.classList.remove('hidden');
     }
-  };
-})();
-</script>
+
+    // Validate required params
+    if (!table || !token) {
+      subtitle.textContent = 'Missing parameters. URL must include ?table=...&token=...';
+      btnConfirm.disabled = true;
+      return;
+    }
+
+    // Show details
+    subtitle.textContent = 'Review and send the request to the robot.';
+    details.classList.remove('hidden');
+    tableBadge.textContent = table;
+    if (name) {
+      custName.textContent = name;
+      nameRow.classList.remove('hidden');
+    }
+
+    // UI helpers
+    function showStatus(msg, kind='info') {
+      statusWrap.classList.remove('hidden');
+      status.textContent = msg;
+      status.classList.remove('ring-green-300','bg-green-50','text-green-800','dark:bg-green-900/30','dark:text-green-200');
+      status.classList.remove('ring-rose-300','bg-rose-50','text-rose-800','dark:bg-rose-900/30','dark:text-rose-200');
+      status.classList.remove('ring-slate-200','bg-slate-50','dark:bg-slate-800');
+      if (kind === 'success') {
+        status.classList.add('ring-green-300','bg-green-50','text-green-800','dark:bg-green-900/30','dark:text-green-200');
+      } else if (kind === 'error') {
+        status.classList.add('ring-rose-300','bg-rose-50','text-rose-800','dark:bg-rose-900/30','dark:text-rose-200');
+      } else {
+        status.classList.add('ring-slate-200','bg-slate-50','dark:bg-slate-800');
+      }
+    }
+
+    btnCancel.addEventListener('click', () => {
+      showStatus('Canceled.', 'info');
+      setTimeout(() => history.back(), 600);
+    });
+
+    btnConfirm.addEventListener('click', async () => {
+      btnConfirm.disabled = true;
+      showStatus('Sending request…', 'info');
+      try {
+        const payload = { token, table };
+        if (name) payload.name = name;
+
+        const res = await fetch('/go', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const txt = await res.text();
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${txt}`);
+        showStatus(`✔ OK\n${txt}`, 'success');
+      } catch (err) {
+        showStatus(`✖ Error\n${err.message}`, 'error');
+        btnConfirm.disabled = false;
+      }
+    });
+  })();
+  </script>
 </body>
 </html>
