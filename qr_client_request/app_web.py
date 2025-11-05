@@ -6,29 +6,33 @@ import os, httpx
 
 app = FastAPI(title="QR Robot Cloud")
 
-# Variables privadas (se ponen en Render, no en el código):
-ROBOT_URL = os.getenv("ROBOT_URL")   # p.ej. https://robot.tu-tunel.cloudflareaccess.com
-TOKEN = os.getenv("TOKEN", "demo-token")  # por ahora, igual al de tu QR
+ROBOT_URL = os.getenv("ROBOT_URL")                   # stays empty while “simulated”
+TOKEN     = os.getenv("TOKEN", "demo-token")
 
 @app.post("/go")
 async def go(payload: dict):
+    # required params
     token = payload.get("token")
+    table = payload.get("table")
+    name  = payload.get("name")  # NEW
+
     if token != TOKEN:
-        raise HTTPException(401, "Token inválido")
+        raise HTTPException(401, "Invalid token")
+    if not table:
+        raise HTTPException(400, "Missing 'table'")
 
-    # Si todavía no hay túnel al robot, responde en "simulado"
+    # SIMULATED mode (no robot tunnel yet)
     if not ROBOT_URL:
-        table = payload.get("table")
-        return JSONResponse({"ok": True, "status": "simulado", "table": table})
+        return JSONResponse({"ok": True, "status": "simulated", "table": table, "name": name})
 
-    # Si ya hay túnel, reenviamos al robot
+    # REAL mode (forward to robot)
     async with httpx.AsyncClient() as client:
         r = await client.post(f"{ROBOT_URL}/ros/go", json=payload, timeout=10)
         if r.status_code >= 400:
             raise HTTPException(r.status_code, r.text)
         return JSONResponse(r.json())
 
-# Estáticos
+# static files
 BASE = Path(__file__).parent
 STATIC_DIR = BASE / "static"
 STATIC_DIR.mkdir(exist_ok=True)
